@@ -1,0 +1,97 @@
+name: Build and Push Docker Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgres_version:
+        description: 'PostgreSQL version (e.g., "16") - ignored if postgres_image is provided'
+        required: false
+        default: '16'
+        type: string
+      postgres_image:
+        description: 'Full PostgreSQL image (e.g., "postgres:12-alpine") - overrides postgres_version'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine build parameters
+        id: params
+        run: |
+          if [ -n "${{ github.event.inputs.postgres_image }}" ]; then
+            # Extract tag from full image (e.g., postgres:12-alpine -> 12-alpine)
+            IMAGE="${{ github.event.inputs.postgres_image }}"
+            TAG=$(echo "$IMAGE" | cut -d':' -f2)
+            echo "Using custom image: $IMAGE"
+            echo "Extracted tag: $TAG"
+            echo "postgres_image=$IMAGE" >> $GITHUB_OUTPUT
+            echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+            echo "postgres_version=$(echo "$TAG" | grep -o '^[0-9]\+')" >> $GITHUB_OUTPUT
+          else
+            # Use simple version
+            VERSION="${{ github.event.inputs.postgres_version }}"
+            IMAGE="postgres:$VERSION"
+            echo "Using version: $VERSION"
+            echo "postgres_image=$IMAGE" >> $GITHUB_OUTPUT
+            echo "image_tag=$VERSION" >> $GITHUB_OUTPUT
+            echo "postgres_version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.params.outputs.image_tag }}
+            type=raw,value=latest,enable=${{ steps.params.outputs.postgres_version == '18' && !contains(steps.params.outputs.image_tag, '-') }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            POSTGRES_IMAGE=${{ steps.params.outputs.postgres_image }}
+            POSTGRES_VERSION=${{ steps.params.outputs.postgres_version }}
+          cache-from: type=gha,scope=${{ steps.params.outputs.image_tag }}
+          cache-to: type=gha,mode=max,scope=${{ steps.params.outputs.image_tag }}
+
+      - name: Build Summary
+        run: |
+          echo "## 🐘 PostgreSQL Portable Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Base Image:** \`${{ steps.params.outputs.postgres_image }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**PostgreSQL Version:** ${{ steps.params.outputs.postgres_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image available at:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`ghcr.io/${{ github.repository }}:${{ steps.params.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
