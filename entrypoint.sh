@@ -8,6 +8,7 @@ STANZA=${PGBACKREST_STANZA:-database}
 cat > /etc/pgbackrest.conf <<EOF
 [${STANZA}]
 pg1-path=/var/lib/postgresql/data
+pg1-user=${POSTGRES_USER}
 [global]
 repo1-type=s3
 repo1-path=${REPO1_PATH:-/db}
