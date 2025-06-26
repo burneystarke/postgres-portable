@@ -5,7 +5,7 @@
 
 
 	# Wait for server to be ready
-	until pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"; do
+	until pg_isready -U "${POSTGRES_USER}" -d postgres; do
 	sleep 1
 	done
 
@@ -19,7 +19,7 @@
 
 	# Setup pg_cron extension
 
-	psql -o /dev/null -U "$POSTGRES_USER" -d "${POSTGRES_DB}" <<-EOSQL
+	psql -o /dev/null -U "$POSTGRES_USER" -d postgres <<-EOSQL
 	    CREATE EXTENSION IF NOT EXISTS pg_cron;
 	    
 	    -- Drop existing jobs if they exist
@@ -39,7 +39,7 @@
 	        \$\$SELECT system('pgbackrest --stanza=$STANZA backup --type=incr')\$\$
 	    );
 	EOSQL
-       psql -P expanded=auto -U "$POSTGRES_USER" -d "${POSTGRES_DB}"  -c 'SELECT jobname,schedule,command FROM cron.job'
+       psql -P expanded=auto -U "$POSTGRES_USER" -d postgres  -c 'SELECT jobname,schedule,command FROM cron.job'
 
 
 	if pgbackrest --stanza="$STANZA"  info | grep error > /dev/null 2>&1; then
