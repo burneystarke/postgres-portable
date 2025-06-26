@@ -1,6 +1,7 @@
 # PostgreSQL + pgBackRest Docker Image
 
-A production-ready PostgreSQL Docker image with automated backup capabilities using pgBackRest and S3-compatible storage. Features automatic restore from backups, scheduled backups via pg_cron, and support for multiple PostgreSQL versions.
+I developed this for personal use. Use at your own risk. 
+PostgreSQL Docker image with automated backup capabilities using pgBackRest and S3-compatible storage. Features automatic restore from backups, scheduled backups via pg_cron, and support for multiple PostgreSQL versions.
 
 ## Features
 
@@ -22,9 +23,9 @@ A production-ready PostgreSQL Docker image with automated backup capabilities us
 2. **Configure your environment variables in `.env`:**
    ```bash
    # Required
-   DB_PASSWORD=your_secure_password
-   DB_USERNAME=myuser
-   DB_DATABASE_NAME=myapp
+   POSTGRES_PASSWORD=your_secure_password
+   POSTGRES_USER=myuser
+   POSTGRES_DB=myapp
    REPO1_S3_ENDPOINT=s3.amazonaws.com
    REPO1_S3_BUCKET=my-backup-bucket
    REPO1_S3_KEY=your-access-key
@@ -62,9 +63,9 @@ A production-ready PostgreSQL Docker image with automated backup capabilities us
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DB_PASSWORD` | PostgreSQL password | `mysecretpassword` |
-| `DB_USERNAME` | PostgreSQL username | `myuser` |
-| `DB_DATABASE_NAME` | Database name | `myapp` |
+| `POSTGRES_PASSWORD` | PostgreSQL password | `mysecretpassword` |
+| `POSTGRES_USER` | PostgreSQL username | `myuser` |
+| `POSTGRES_DB` | Database name | `myapp` |
 | `REPO1_S3_ENDPOINT` | S3 endpoint URL | `s3.amazonaws.com` |
 | `REPO1_S3_BUCKET` | S3 bucket name | `my-backup-bucket` |
 | `REPO1_S3_KEY` | S3 access key | `AKIAIOSFODNN7EXAMPLE` |
@@ -75,9 +76,10 @@ A production-ready PostgreSQL Docker image with automated backup capabilities us
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PGBACKREST_STANZA` | `database` | pgBackRest stanza name |
-| `PGBACKREST_FULLCRON` | `0 3 * * 0` | Full backup schedule (Sundays at 3 AM) |
-| `PGBACKREST_INCRCRON` | `0 3 * * 1-6` | Incremental backup schedule (Mon-Sat at 3 AM) |
-| `PGBACKREST_RETENTION` | `1` | Number of full backups to retain |
+| `PGBR_FULLCRON` | `0 3 * * 0` | Full backup schedule (Sundays at 3 AM) |
+| `POSTGRES_ARCHIVE_TIMEOUT` | 60 | Rotate the WAL every 60 seconds |
+| `PGBR_INCRCRON` | `0 3 * * 1-6` | Incremental backup schedule (Mon-Sat at 3 AM) |
+| `PGBR_RETENTION` | `1` | Number of full backups to retain |
 | `REPO1_PATH` | `/db` | Repository path in S3 bucket |
 
 ## Backup Strategy
@@ -131,15 +133,15 @@ REPO1_S3_BUCKET=postgres-backups
 The repository includes a GitHub Actions workflow for building images with different PostgreSQL versions:
 
 ### Available Tags
-#### Standard PostGres
-##### Uses `postgres:$TAG` as the base image
-- `ghcr.io/burneystarke/postgres-portable:16` - PostgreSQL 16
-- `ghcr.io/burneystarke/postgres-portable:15` - PostgreSQL 15
-- `ghcr.io/burneystarke/postgres-portable:14` - PostgreSQL 14
-- `ghcr.io/burneystarke/postgres-portable:12` - PostgreSQL 12
-#### Immich
-##### Uses `ghcr.io/immich-app/postgres:$TAG` as the base image
-- `ghcr.io/burneystarke/postgres-portable:14-vectorchord0.4.3-pgvectors0.2.0`
+#### Standard PostGres ####
+Uses postgres:<TAG> as the base image
+- `ghcr.io/burneystarke/postgres-portable:16`
+- `ghcr.io/burneystarke/postgres-portable:15`
+- `ghcr.io/burneystarke/postgres-portable:14`
+- `ghcr.io/burneystarke/postgres-portable:12`
+#### Immich ####
+Uses ghcr.io/immich-app/postgres:<TAG> as the base image
+- `ghcr.io/burneystarke/postgres-portable:14-vectorchord0.4.3-pgvectors0.2.0` - 
 
 
 
