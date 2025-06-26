@@ -131,12 +131,12 @@ REPO1_S3_BUCKET=postgres-backups
 The repository includes a GitHub Actions workflow for building images with different PostgreSQL versions:
 
 ### Available Tags
-####Standard PostGres####
+#### Standard PostGres
 - `ghcr.io/burneystarke/postgres-portable:16` - PostgreSQL 16
 - `ghcr.io/burneystarke/postgres-portable:15` - PostgreSQL 15
 - `ghcr.io/burneystarke/postgres-portable:14` - PostgreSQL 14
 - `ghcr.io/burneystarke/postgres-portable:12` - PostgreSQL 12
-####Immich####
+#### Immich
 - `ghcr.io/burneystarke/postgres-portable:14-vectorchord0.4.3-pgvectors0.2.0` - Uses ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0 as the base image
 
 
