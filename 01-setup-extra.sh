@@ -11,6 +11,7 @@ mkdir -p /var/lib/postgresql/data/conf.d
 cat > /var/lib/postgresql/data/conf.d/pgbackrest.conf <<EOF
 archive_mode = on
 archive_command = 'pgbackrest --stanza=${STANZA} archive-push %p'
+archive_timeout = ${POSTGRES_ARCHIVE_TIMEOUT}
 EOF
 
 #Generate pg_cron conf
