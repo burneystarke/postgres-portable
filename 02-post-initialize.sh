@@ -21,6 +21,14 @@
 
 	psql -o /dev/null -U "$POSTGRES_USER" -d postgres <<-EOSQL
 	    CREATE EXTENSION IF NOT EXISTS pg_cron;
+	    CREATE EXTENSION IF NOT EXISTS plsh;
+	    
+	    -- Create the exec_shell function FIRST
+	    CREATE OR REPLACE FUNCTION exec_shell(command text)
+	        RETURNS text AS \$func\$
+	    #!/bin/bash
+	    eval "\$1"
+	    \$func\$ LANGUAGE plsh;
 	    
 	    -- Drop existing jobs if they exist
 	    DELETE FROM cron.job WHERE jobname IN ('full-backup', 'incr-backup');
@@ -29,14 +37,14 @@
 	    SELECT cron.schedule(
 	        'full-backup',
 	        '$FULL_CRON',
-	        \$\$SELECT system('pgbackrest --stanza=$STANZA backup --type=full')\$\$
+	        \$\$SELECT exec_shell('pgbackrest --stanza=$STANZA backup --type=full')\$\$
 	    );
 	    
 	    -- Schedule incremental backup
 	    SELECT cron.schedule(
 	        'incr-backup',
 	        '$INCR_CRON',
-	        \$\$SELECT system('pgbackrest --stanza=$STANZA backup --type=incr')\$\$
+	        \$\$SELECT exec_shell('pgbackrest --stanza=$STANZA backup --type=incr')\$\$
 	    );
 	EOSQL
        psql -P expanded=auto -U "$POSTGRES_USER" -d postgres  -c 'SELECT jobname,schedule,command FROM cron.job'
