@@ -9,7 +9,7 @@ RUN set -eux; \
         ca-certificates \
         curl \
         pgbackrest \
-        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron; \
+        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron \
         postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh; \
     rm -rf /var/lib/apt/lists/*
 
