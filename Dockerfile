@@ -1,6 +1,5 @@
 # Use official PostgreSQL image as base
-ARG POSTGRES_VERSION=16
-ARG POSTGRES_IMAGE=postgres:${POSTGRES_VERSION}
+ARG POSTGRES_IMAGE=postgres:16
 FROM ${POSTGRES_IMAGE}
 
 # Install dependencies
