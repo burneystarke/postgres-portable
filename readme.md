@@ -1,6 +1,6 @@
 # PostgreSQL + pgBackRest Docker Image
 
-I developed this for personal use. Use at your own risk. 
+I developed this for running PG on inexpensive(unreliable) VPS. Use at your own risk. 
 PostgreSQL Docker image with automated backup capabilities using pgBackRest and S3-compatible storage. Features automatic restore from backups, scheduled backups via pg_cron, and support for multiple PostgreSQL versions.
 
 ## Features
