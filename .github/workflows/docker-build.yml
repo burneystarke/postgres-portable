@@ -54,7 +54,7 @@ jobs:
       - name: Discover original image entrypoint
         run: |
           docker image pull ${{ github.event.inputs.postgres_image }}
-          ORIGINAL_ENTRYPOINT=$(docker image inspect postgres | jq '.[].Config.Entrypoint | join(" ")' -r)
+          ORIGINAL_ENTRYPOINT=$(docker image inspect ${{ github.event.inputs.postgres_image }} | jq '.[].Config.Entrypoint | join(" ")' -r)
           echo "ORIGINAL_ENTRYPOINT=$ORIGINAL_ENTRYPOINT" >> $GITHUB_OUTPUT
       - name: Log in to Container Registry
         uses: docker/login-action@v3
