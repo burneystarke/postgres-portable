@@ -25,7 +25,7 @@ COPY 01-init-pgbackrest-stanza.sh /docker-entrypoint-initdb.d/
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     /docker-entrypoint-initdb.d/01-init-pgbackrest-stanza.sh
 
-
+HEALTHCHECK --start_period=20s --interval=30s --retries=5 --timeout=30s CMD exit $(pgbackrest --stanza="$$PGBACKREST_STANZA" info | grep 'status: error' | wc -l)
 # Set entrypoint and default command
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["postgres"]
