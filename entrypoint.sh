@@ -9,7 +9,7 @@ INCR_CRON=${PGBR_INCRCRON:-0 3 * * 1-6}
 
 
 #If there isn't already a pgbackrest.conf then configure one
-if [ ! -e /etc/pgbackrest.conf ] then;
+if [ ! -e /etc/pgbackrest.conf ]; then
 cat > /etc/pgbackrest.conf <<EOF
 [${STANZA}]
 pg1-path=/var/lib/postgresql/data
@@ -34,10 +34,10 @@ fi
 chown postgres:postgres /etc/pgbackrest.conf
 
 #Configure crontab
-if [ ! -e /crontabs/postgres ] then;
-cat > /crontabs/postgres << EOC
-$FULL_CRON 'pgbackrest --stanza=$STANZA backup --type=full'
-$INCR_CRON 'pgbackrest --stanza=$STANZA backup --type=incr'
+if [ ! -e /crontabs/postgres ]; then
+cat > /crontabs/postgres <<EOC
+$FULL_CRON pgbackrest --stanza=$STANZA backup --type=full
+$INCR_CRON pgbackrest --stanza=$STANZA backup --type=incr
 EOC
 fi
 
