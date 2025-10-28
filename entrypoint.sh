@@ -3,8 +3,13 @@ set -e
 
 # Configure pgBackRest
 STANZA=${PGBACKREST_STANZA:-database}
+FULL_CRON=${PGBR_FULLCRON:-0 3 * * 0}
+INCR_CRON=${PGBR_INCRCRON:-0 3 * * 1-6}
 
-# Generate pgBackRest config
+
+
+#If there isn't already a pgbackrest.conf then configure one
+if [ ! -e /etc/pgbackrest.conf ] then;
 cat > /etc/pgbackrest.conf <<EOF
 [${STANZA}]
 pg1-path=/var/lib/postgresql/data
@@ -25,9 +30,16 @@ process-max=4
 archive-async=y
 log-level-console=info
 EOF
+fi
+chown postgres:postgres /etc/pgbackrest.conf
 
-mkdir -p /tmp/pgbackrest/
-chown -R postgres:postgres /etc/pgbackrest.conf /var/log/pgbackrest/ /tmp/pgbackrest/
+#Configure crontab
+if [ ! -e /crontabs/postgres ] then;
+cat > /crontabs/postgres << EOC
+$FULL_CRON 'pgbackrest --stanza=$STANZA backup --type=full'
+$INCR_CRON 'pgbackrest --stanza=$STANZA backup --type=incr'
+EOC
+fi
 
 # Check for empty data directory (excluding config files)
 data_files=$(ls -A /var/lib/postgresql/data | wc -l)
@@ -40,7 +52,8 @@ if [ "$data_files" -eq 0 ]; then
         echo "Restore failed, proceeding with normal startup"
     fi
 fi
-
+#Start crond
+crond -b -c /crontabs/
 
 # Start PostgreSQL normally
-exec /usr/local/bin/docker-entrypoint.sh "$@"
+exec "$ENTRYCHAIN" "$@"
