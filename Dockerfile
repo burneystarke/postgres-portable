@@ -15,6 +15,7 @@ RUN set -eux; \
         busybox; \
     rm -rf /var/lib/apt/lists/*
 RUN ln -s $(which busybox) /usr/bin/crond
+RUN rm /etc/pgbackrest.conf
 RUN mkdir -p /crontabs /tmp/pgbackrest/ /var/log/pgbackrest && chown -R postgres:postgres /tmp/pgbackrest/ /var/log/pgbackrest
 
 # Copy configuration scripts
