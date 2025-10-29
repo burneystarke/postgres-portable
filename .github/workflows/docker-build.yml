@@ -73,7 +73,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.REPO }}/${{ steps.params.outputs.IMAGE }}
+          images: ${{ env.REGISTRY }}/${{ steps.params.outputs.IMAGE }}
           tags: |
             type=raw,value=${{ steps.params.outputs.TAG }}
 
