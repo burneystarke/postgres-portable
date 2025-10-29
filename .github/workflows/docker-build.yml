@@ -24,7 +24,7 @@ jobs:
         run: |
           IMAGES="${{ github.event.inputs.postgres_image }}"
           # Split by comma and trim spaces
-          MATRIX_JSON=$(echo "$IMAGES" | jq -R 'split(",") | map(ltrimstr(" ") | rtrimstr(" "))')
+          MATRIX_JSON=$(echo "$IMAGES" | jq -Rc 'split(",") | map(ltrimstr(" ") | rtrimstr(" "))')
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "Generated matrix: $MATRIX_JSON"
   build:
