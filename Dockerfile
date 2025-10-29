@@ -37,12 +37,14 @@ RUN mkdir -p /crontabs /tmp/pgbackrest/ /var/log/pgbackrest && chown -R postgres
 # Copy configuration scripts
 COPY postgres-portable-entrypoint.sh /usr/local/bin/
 COPY 01-init-pgbackrest-stanza.sh /docker-entrypoint-initdb.d/
+COPY postgres-portable-healthcheck.sh /usr/local/bin/postgres-portable-healthcheck.sh
 
 # Set permissions
 RUN chmod +x /usr/local/bin/postgres-portable-entrypoint.sh \
-    /docker-entrypoint-initdb.d/01-init-pgbackrest-stanza.sh
+    /docker-entrypoint-initdb.d/01-init-pgbackrest-stanza.sh \
+    /usr/local/bin/postgres-portable-healthcheck.sh
 
-HEALTHCHECK --start-period=20s --interval=30s --retries=5 --timeout=30s CMD exit $(pgbackrest --stanza=$PGBACKREST_STANZA info | grep 'status: error' | wc -l)
+HEALTHCHECK --interval=5m --start-interval=5s --start-period=5m /usr/local/bin/postgres-portable-healthcheck.sh
 
 #This entrypoint will chain the original/next entrypoint from the ENTRYCHAIN var
 ENTRYPOINT ["/usr/local/bin/postgres-portable-entrypoint.sh"]
