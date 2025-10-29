@@ -51,11 +51,14 @@ jobs:
           SRC_IMAGE="${{ matrix.postgres_image }}"
           docker image pull $SRC_IMAGE
           ORIGINAL_ENTRYPOINT=$(docker image inspect $SRC_IMAGE | jq '.[].Config.Entrypoint | join(" ")' -r)
+          ORIGINAL_CMD=$(docker image inspect $SRC_IMAGE | jq '.[].Config.Cmd' -c)
           REPO_TAG=$(docker image inspect $SRC_IMAGE | jq .[0].RepoTags[0] -r)
           IMAGE_TAG=$( echo $REPO_TAG | awk -F'/' '{n=split($NF, a, ":"); tag=a[2]; sub(":.+", "", $NF); if (NF==1) print $NF ":" tag; else print $(NF-1) "-" $NF ":" tag}')
           echo "Will tag $REPO_TAG as $IMAGE_TAG"
           IMAGE=$(echo $IMAGE_TAG | awk -F':' '{print $1"-portable"}')
           TAG=$(echo $IMAGE_TAG | awk -F':' '{print $2}')
+          echo "Appending original CMD to end of dockerfile"
+          echo "CMD $ORIGINAL_CMD" >> Dockerfile
           echo "SRC_IMAGE=$SRC_IMAGE" >> $GITHUB_OUTPUT
           echo "IMAGE=$IMAGE" >> $GITHUB_OUTPUT
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
