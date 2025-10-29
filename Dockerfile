@@ -5,22 +5,23 @@ ARG ORIGINAL_ENTRYPOINT=docker-entrypoint.sh
 FROM ${POSTGRES_IMAGE} AS base
 
 # Install dependencies
-RUN set -eux; \
-    if [ -d /etc/apt ]; then
-    apt-get update && \
+RUN <<EOR
+    set -eux;
+    if [ -d /etc/apt ]; then 
+    apt-get update && 
     apt-get install -y \
         ca-certificates \
         pgbackrest \
-        busybox; \
-    rm -rf /var/lib/apt/lists/*
-    elif [ -d /etc/apk ]; then
-    apk update && \
+        busybox; 
+    rm -rf /var/lib/apt/lists/*; 
+    elif [ -d /etc/apk ]; then 
+    apk update && 
     apk add --no-cache \
         ca-certificates \
         pgbackrest \
-        busybox; \
+        busybox; 
     fi
-
+EOR
 
 FROM base
 ARG ORIGINAL_ENTRYPOINT
