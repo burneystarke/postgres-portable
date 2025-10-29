@@ -55,5 +55,15 @@ fi
 #Start crond
 crond -b -c /crontabs/
 
+<<<<<<< HEAD:entrypoint.sh
 # Start PostgreSQL normally
 exec "$ENTRYCHAIN" "$@"
+=======
+# Chain entrypoint if ENV provided
+if [ -f "$ENTRYCHAIN" ]; then
+    exec "$ENTRYCHAIN" "$@"
+else
+    echo "No ENTRYCHAIN env set, or ENTRYCHAIN does not exist"
+    exec "$@"
+fi
+>>>>>>> c66cde7 (keep original CMD, add multistage support for alpine based images):postgres-portable-entrypoint.sh
