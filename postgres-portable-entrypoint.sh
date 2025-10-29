@@ -56,7 +56,7 @@ fi
 crond -b -c /crontabs/
 
 # Chain entrypoint if ENV provided
-if [[ -f "$ENTRYCHAIN" || -f $(which "$ENTRYCHAIN" )]]; then
+if [ -f "$ENTRYCHAIN" ] || [ -f "$(command -v "$ENTRYCHAIN" 2>/dev/null)" ]; then
     exec "$ENTRYCHAIN" "$@"
 else
     echo "No ENTRYCHAIN env set, or ENTRYCHAIN does not exist"
