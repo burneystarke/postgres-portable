@@ -10,7 +10,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  REPO: ${{ github.repository }}
 
 jobs:
   # Single build job for manual dispatch
@@ -75,7 +74,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.REPO }}/${{ steps.params.outputs.IMAGE_TAG }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ steps.params.outputs.IMAGE_TAG }}
           build-args: |
             POSTGRES_IMAGE=${{ steps.params.outputs.SRC_IMAGE }}
           cache-from: type=gha,scope=${{ steps.params.outputs.IMAGE_TAG }}
