@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  REPO: ${{ github.repository }}
 
 jobs:
   # Single build job for manual dispatch
@@ -73,7 +73,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ steps.params.outputs.IMAGE }}
+          images: ${{ env.REGISTRY }}/${{ env.REPO }}/${{ steps.params.outputs.IMAGE }}
           tags: |
             type=raw,value=${{ steps.params.outputs.TAG }}
 
