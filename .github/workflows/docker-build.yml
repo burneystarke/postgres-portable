@@ -54,12 +54,12 @@ jobs:
           REPO_TAG=$(docker image inspect $SRC_IMAGE | jq .[0].RepoTags[0] -r)
           IMAGE_TAG=$( echo $REPO_TAG | awk -F'/' '{n=split($NF, a, ":"); tag=a[2]; sub(":.+", "", $NF); if (NF==1) print $NF ":" tag; else print $(NF-1) "-" $NF ":" tag}')
           echo "Will tag $REPO_TAG as $IMAGE_TAG"
-          IMAGE=$(echo $IMAGE_TAG | awk -F':' '{print $1}')
+          IMAGE=$(echo $IMAGE_TAG | awk -F':' '{print $1"-portable"}')
           TAG=$(echo $IMAGE_TAG | awk -F':' '{print $2}')
           echo "SRC_IMAGE=$SRC_IMAGE" >> $GITHUB_OUTPUT
           echo "IMAGE=$IMAGE" >> $GITHUB_OUTPUT
           echo "TAG=$TAG" >> $GITHUB_OUTPUT
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=$IMAGE:$TAG" >> $GITHUB_OUTPUT
           echo "ORIGINAL_ENTRYPOINT=$ORIGINAL_ENTRYPOINT" >> $GITHUB_OUTPUT
       - name: Log in to Container Registry
         uses: docker/login-action@v3
