@@ -3,9 +3,12 @@ ARG POSTGRES_IMAGE=postgres:16
 ARG ORIGINAL_ENTRYPOINT=docker-entrypoint.sh
 
 FROM ${POSTGRES_IMAGE} AS base
+#This is here to cachebust this layer for different base images, echos in run
+ARG POSTGRES_IMAGE
 
 # Install dependencies
 RUN <<EOR
+    echo "Base image ${POSTGRES_IMAGE}";
     set -eux;
     if [ -d /etc/apt ]; then 
     apt-get update && 
@@ -27,7 +30,8 @@ FROM base
 ARG ORIGINAL_ENTRYPOINT
 ENV ENTRYCHAIN="${ORIGINAL_ENTRYPOINT}"
 RUN ln -s $(which busybox) /usr/bin/crond
-RUN rm /etc/pgbackrest.conf
+#Remove this if it exists so entrypoint can honor user volumes and only replace if default
+RUN rm /etc/pgbackrest.conf -f
 RUN mkdir -p /crontabs /tmp/pgbackrest/ /var/log/pgbackrest && chown -R postgres:postgres /tmp/pgbackrest/ /var/log/pgbackrest
 
 # Copy configuration scripts
