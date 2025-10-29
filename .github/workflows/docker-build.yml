@@ -8,17 +8,6 @@ on:
         required: false
         type: string
 
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'Dockerfile'
-      - 'entrypoint.sh'
-      - '01-setup-extra.sh'
-      - '02-post-initialize.sh'
-      - '.github/workflows/**'
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
