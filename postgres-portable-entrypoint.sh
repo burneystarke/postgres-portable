@@ -36,8 +36,8 @@ chown postgres:postgres /etc/pgbackrest.conf
 #Configure crontab
 if [ ! -e /crontabs/postgres ]; then
 cat > /crontabs/postgres <<EOC
-$FULL_CRON pgbackrest --stanza=$STANZA backup --type=full >> /prod/1/fd/1 2&>1
-$INCR_CRON pgbackrest --stanza=$STANZA backup --type=incr >> /prod/1/fd/1 2&>1
+$FULL_CRON pgbackrest --stanza=$STANZA backup --type=full
+$INCR_CRON pgbackrest --stanza=$STANZA backup --type=incr
 EOC
 fi
 
@@ -52,13 +52,13 @@ if [ "$data_files" -eq 0 ]; then
         echo "Restore failed, proceeding with normal startup"
     fi
 fi
-#Start crond forked, but with stdout to proc 1
-crond -b -c /crontabs/ -L /proc/1/fd/1
+#Start crond forked
+crond -b -c /crontabs/
 
 # Chain entrypoint if ENV provided
 if [ -f "$ENTRYCHAIN" ] || [ -f "$(command -v "$ENTRYCHAIN" 2>/dev/null)" ]; then
     exec "$ENTRYCHAIN" "$@"
 else
-    echo "No ENTRYCHAIN env set, or ENTRYCHAIN does not exist"
+    echo "No ENTRYCHAIN env set, or ENTRYCHAIN does not exist, running CMD $@"
     exec "$@"
 fi
