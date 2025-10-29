@@ -1,7 +1,7 @@
 # PostgreSQL + pgBackRest Docker Image
 
 I developed this for running PG on inexpensive(unreliable) VPS. Use at your own risk. 
-PostgreSQL Docker image with automated backup capabilities using pgBackRest and S3-compatible storage. Features automatic restore from backups, scheduled backups via pg_cron, and support for multiple PostgreSQL versions.
+PostgreSQL Docker image with automated backup capabilities using pgBackRest and S3-compatible storage. Features automatic restore from backups, scheduled backups via cron, and support for multiple PostgreSQL versions.
 
 ## Features
 
@@ -9,9 +9,10 @@ PostgreSQL Docker image with automated backup capabilities using pgBackRest and 
 - **S3 Integration**: Store backups on any S3-compatible storage (AWS S3, MinIO, R2, etc.)
 - **Auto-Restore**: Automatically restore from existing backups on container startup
 - **Multiple Versions**: Support for various PostgreSQL versions (12, 13, 14, 15, 16, etc.)
-- **Built-in Scheduling**: Uses pg_cron extension for automated backup scheduling
+- **Built-in Scheduling**: Uses cron for automated backup scheduling
 - **Compression**: Efficient backup compression using Zstandard
 - **Multi-Architecture**: Supports both AMD64 and ARM64 platforms
+- **Entrypoint chaining**: Chains the original ENTRYPOINT and CMD
 
 ## Quick Start
 
@@ -37,7 +38,7 @@ PostgreSQL Docker image with automated backup capabilities using pgBackRest and 
    version: '3.8'
    services:
      postgres:
-       image: ghcr.io/burneystarke/postgres-portable:16
+       image: ghcr.io/burneystarke/postgres-portable:16.10
        env_file: .env
        environment:
          POSTGRES_DB: ${DB_DATABASE_NAME}
@@ -88,7 +89,7 @@ The image implements a comprehensive backup strategy:
 
 - **Full Backups**: Complete database backup (default: Sundays at 3 AM)
 - **Incremental Backups**: Changed data since last backup (default: Monday-Saturday at 3 AM)
-- **Automatic Scheduling**: Uses pg_cron extension for reliable scheduling
+- **Automatic Scheduling**: Uses cron for reliable scheduling
 - **Retention Policy**: Configurable backup retention (default: 1 full backup cycle)
 
 ### Manual Backup Operations
@@ -135,13 +136,10 @@ The repository includes a GitHub Actions workflow for building images with diffe
 ### Available Tags
 #### Standard PostGres ####
 Uses postgres:<TAG> as the base image
-- `ghcr.io/burneystarke/postgres-portable:16`
-- `ghcr.io/burneystarke/postgres-portable:15`
-- `ghcr.io/burneystarke/postgres-portable:14`
-- `ghcr.io/burneystarke/postgres-portable:12`
+- `ghcr.io/burneystarke/postgres-portable:16.10`
 #### Immich ####
-Uses ghcr.io/immich-app/postgres:<TAG> as the base image
-- `ghcr.io/burneystarke/postgres-portable:14-vectorchord0.4.3-pgvectors0.2.0` - 
+Uses ghcr.io/immich-app/postgres:<TAG> as the base image and prepends the repo name
+- `ghcr.io/burneystarke/immich-app-postgres-portable:14-vectorchord0.4.3-pgvectors0.2.0` - 
 
 
 
@@ -149,7 +147,7 @@ Uses ghcr.io/immich-app/postgres:<TAG> as the base image
 
 ```bash
 # Build for PostgreSQL 16
-docker build --build-arg POSTGRES_VERSION=16 -t my-postgres:16 .
+docker build --build-arg POSTGRES_VERSION=16.10 -t my-postgres:16 .
 
 # Build with custom base image
 docker build --build-arg POSTGRES_IMAGE=postgres:15-alpine -t my-postgres:15-alpine .
@@ -192,10 +190,6 @@ The container will automatically restore from the latest backup.
 # View backup information
 docker exec container_name pgbackrest --stanza=database info
 
-# Check scheduled jobs
-docker exec container_name psql -U username -d postgres -c "SELECT * FROM cron.job;"
-```
-
 ### View Logs
 ```bash
 # Container logs
@@ -226,11 +220,6 @@ docker exec container_name cat /var/log/pgbackrest/database-backup.log
 - Check if backups exist in the S3 bucket
 - Verify pgBackRest configuration
 - Review container logs for specific error messages
-
-**Scheduled backups not running:**
-- Confirm pg_cron extension is installed
-- Check cron job configuration: `SELECT * FROM cron.job;`
-- Verify PostgreSQL user has necessary permissions
 
 ### Getting Help
 
