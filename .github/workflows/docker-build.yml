@@ -7,7 +7,7 @@ on:
         description: 'Full PostgreSQL image(s), comma-separated (e.g. postgres:16.10,postgres:15-alpine)'
         required: true
         type: string
-        
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -28,7 +28,7 @@ jobs:
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "Generated matrix: $MATRIX_JSON"
   build:
-    needs: prepare
+    needs: images
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
