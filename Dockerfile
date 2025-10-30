@@ -18,7 +18,15 @@ RUN <<EOR
         pgbackrest;
     rm -rf /var/lib/apt/lists/*; 
     elif [ -d /etc/apk ]; then 
-        throw "Alpine doesn't have a standalone pgcron, it installs a new versions of postgres."
+        apk update &&
+        apk add --no-cache \
+        ca-certificates \
+        pgbackrest;
+        apk add --virtual .build-deps build-base llvm19 openssl tar clang19 cmake;
+        mkdir /tmp/pg_cron && cd /tmp/pg_cron;
+        wget -qO- https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.7.tar.gz | tar -xvzf - --strip-components 1 -C . && make install;
+        cd / && rm -rf /tmp/pg_cron;
+        apk del .build-deps;
     fi
 EOR
 
