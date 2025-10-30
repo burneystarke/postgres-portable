@@ -32,7 +32,11 @@ RUN <<EOR
             --transform="s|.*/lib/postgresql[0-9]*|${pkglibdir:1}|g" \
             --transform="s|.*/share/postgresql[0-9]*|${sharedir:1}|g" \
             -C /;
-        #pgbackrest includes whatever version of postgres is default, we don't need that. Also exclude logrotate bundle.
+        #pgbackrest includes whatever version of postgres is default, we don't need that. Also exclude logrotate bundle. Install depends excluding postgres
+        apk dot pgbackrest | grep '^\s*\"pgback.*' | \
+          grep -v '.*\-> \"post.*' | \
+          sed -e 's|.*->\s||g' -e 's|\-.*|\"|g' -e 's|\"||g' | \
+          xargs -I{} apk add {};
         apk fetch -s pgbackrest | tar -xzf - --exclude="*logrotate*" -C /; 
     fi
 EOR
