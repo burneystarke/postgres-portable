@@ -20,7 +20,7 @@ RUN <<EOR
     elif [ -d /etc/apk ]; then 
         apk update &&
         apk add --no-cache \
-        ca-certificates; \
+        ca-certificates \
         pgbackrest;
         apk add --virtual .build-deps build-base llvm19 openssl tar clang19 cmake;
         mkdir /tmp/pg_cron && cd /tmp/pg_cron;
