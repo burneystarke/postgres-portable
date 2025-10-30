@@ -29,6 +29,9 @@ RUN <<EOR
         wget -qO- https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.7.tar.gz | tar -xvzf - --strip-components 1 -C . && make install;
         cd / && rm -rf /tmp/pg_cron;
         apk del .build-deps;
+        #perl uses nonstandard paths in alpine, ln the library somewhere common
+        ln -s /usr/lib/perl5/core_perl/CORE/libperl.so /usr/lib/libperl.so;
+
     fi
 EOR
 
