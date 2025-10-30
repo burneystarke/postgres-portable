@@ -11,7 +11,7 @@ EOF
 
 	# Setup pg_cron extension
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --no-psqlrc --db-name "postgres" <<-EOSQL
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --no-psqlrc --dbname "postgres" <<-EOSQL
 -- Need to reload config to ensure the shared library is loaded.
 SELECT pg_reload_conf();
 CREATE EXTENSION IF NOT EXISTS pg_cron;
@@ -44,5 +44,5 @@ SELECT cron.schedule(
 	'SELECT pgbackrest_incr();'
 );
 EOSQL
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --no-psqlrc --db-name "postgres"  -c 'SELECT jobname,schedule,command FROM cron.job'
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --no-psqlrc --dbname "postgres"  -c 'SELECT jobname,schedule,command FROM cron.job'
 
