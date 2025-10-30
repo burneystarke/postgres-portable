@@ -22,11 +22,13 @@ RUN <<EOR
         apk add --no-cache \
         ca-certificates \
         tar;
+        pkglibdir=$(pg_config --pkglibdir);
+        sharedir=$(pg_config --sharedir);
         #gnutar needed for transform
         #the postgresql pgcron extension puts the extension in the default verison of pg_cron for the distro. This uses tar transforms to put it in the correct place.
         apk fetch -s postgresql-pg_cron | \
             tar -v -xzf - \
-            --exclude=".*"
+            --exclude=".*" \
             --transform="s|.*/lib/postgresql[0-9]*|${pkglibdir:1}|g" \
             --transform="s|.*/share/postgresql[0-9]*|${sharedir:1}|g" \
             -C /;
