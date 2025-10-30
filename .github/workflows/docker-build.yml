@@ -4,105 +4,36 @@ on:
   workflow_dispatch:
     inputs:
       postgres_image:
-        description: 'Full PostgreSQL image (e.g., "postgres:12-alpine or ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0")'
+        description: 'Full PostgreSQL image(s), comma-separated (e.g. postgres:16.10,postgres:15-alpine)'
         required: false
+        default: 'postgres:16.10,postgres:16.10-alpine,ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0,ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0'
         type: string
-
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'Dockerfile'
-      - 'entrypoint.sh'
-      - '01-setup-extra.sh'
-      - '02-post-initialize.sh'
-      - '.github/workflows/**'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Matrix build job for push triggers
-  build-matrix:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      attestations: write
-    strategy:
-      matrix:
-        postgres_image:
-          - "postgres:12"
-          - "postgres:13"
-          - "postgres:14"
-          - "postgres:15"
-          - "postgres:16"
-          - "postgres:17"
-          - "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0"
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Determine build parameters
-        id: params
-        run: |
-          # Extract tag from full image (e.g., postgres:12-alpine -> 12-alpine)
-          IMAGE="${{ matrix.postgres_image }}"
-          TAG=$(echo "$IMAGE" | cut -d':' -f2)         
-          echo "Using image: $IMAGE"
-          echo "Extracted tag: $TAG"
-          echo "postgres_image=$IMAGE" >> $GITHUB_OUTPUT
-          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ steps.params.outputs.image_tag }}
-
-      - name: Build and push Docker image
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            POSTGRES_IMAGE=${{ steps.params.outputs.postgres_image }}
-          cache-from: type=gha,scope=${{ steps.params.outputs.image_tag }}
-          cache-to: type=gha,mode=max,scope=${{ steps.params.outputs.image_tag }}
-
-      - name: Build Summary
-        run: |
-          echo "## 🐘 PostgreSQL Portable Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Base Image:** \`${{ steps.params.outputs.postgres_image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image available at:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`ghcr.io/${{ github.repository }}:${{ steps.params.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
-
   # Single build job for manual dispatch
-  build-manual:
-    if: github.event_name == 'workflow_dispatch'
+  images:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Generate matrix JSON
+        id: set-matrix
+        run: |
+          IMAGES="${{ github.event.inputs.postgres_image }}"
+          # Split by comma and trim spaces
+          MATRIX_JSON=$(echo "$IMAGES" | jq -Rc 'split(",") | map(ltrimstr(" ") | rtrimstr(" "))')
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Generated matrix: $MATRIX_JSON"
+  build:
+    needs: images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres_image: ${{ fromJSON(needs.images.outputs.matrix) }}
     permissions:
       contents: read
       packages: write
@@ -113,35 +44,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Determine build parameters
-        id: params
-        run: |
-          # Extract tag from full image (e.g., postgres:12-alpine -> 12-alpine)
-          IMAGE="${{ github.event.inputs.postgres_image }}"
-          TAG=$(echo "$IMAGE" | cut -d':' -f2)
-          echo "Using image: $IMAGE"
-          echo "Extracted tag: $TAG"
-          echo "postgres_image=$IMAGE" >> $GITHUB_OUTPUT
-          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+      - name: Discover original image entrypoint and build custom tag
+        id: params
+        run: |
+          SRC_IMAGE="${{ matrix.postgres_image }}"
+          docker image pull $SRC_IMAGE
+          ORIGINAL_ENTRYPOINT=$(docker image inspect $SRC_IMAGE | jq '.[].Config.Entrypoint | join(" ")' -r)
+          ORIGINAL_CMD=$(docker image inspect $SRC_IMAGE | jq '.[].Config.Cmd' -c)
+          REPO_TAG=$(docker image inspect $SRC_IMAGE | jq .[0].RepoTags[0] -r)
+          IMAGE_TAG=$( echo $REPO_TAG | awk -F'/' '{n=split($NF, a, ":"); tag=a[2]; sub(":.+", "", $NF); if (NF==1) print $NF ":" tag; else print $(NF-1) "-" $NF ":" tag}')
+          echo "Will tag $REPO_TAG as $IMAGE_TAG"
+          IMAGE=$(echo $IMAGE_TAG | awk -F':' '{print $1"-portable"}')
+          TAG=$(echo $IMAGE_TAG | awk -F':' '{print $2}')
+          echo "Appending original CMD to end of dockerfile"
+          echo "CMD $ORIGINAL_CMD" >> Dockerfile
+          echo "SRC_IMAGE=$SRC_IMAGE" >> $GITHUB_OUTPUT
+          echo "IMAGE=$IMAGE" >> $GITHUB_OUTPUT
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=$IMAGE:$TAG" >> $GITHUB_OUTPUT
+          echo "ORIGINAL_ENTRYPOINT=$ORIGINAL_ENTRYPOINT" >> $GITHUB_OUTPUT
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ steps.params.outputs.image_tag }}
-
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v5
@@ -149,18 +78,8 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ steps.params.outputs.IMAGE_TAG }}
           build-args: |
-            POSTGRES_IMAGE=${{ steps.params.outputs.postgres_image }}
-          cache-from: type=gha,scope=${{ steps.params.outputs.image_tag }}
-          cache-to: type=gha,mode=max,scope=${{ steps.params.outputs.image_tag }}
-
-      - name: Build Summary
-        run: |
-          echo "## 🐘 PostgreSQL Portable Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Base Image:** \`${{ steps.params.outputs.postgres_image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image available at:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`ghcr.io/${{ github.repository }}:${{ steps.params.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+            POSTGRES_IMAGE=${{ steps.params.outputs.SRC_IMAGE }}
+          cache-from: type=gha,scope=${{ steps.params.outputs.IMAGE_TAG }}
+          cache-to: type=gha,mode=max,scope=${{ steps.params.outputs.IMAGE_TAG }}
