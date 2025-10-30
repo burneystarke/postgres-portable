@@ -1,6 +1,6 @@
 #!/bin/sh
 
-su postgres -c "exit $(pgbackrest --stanza=$PGBACKREST_STANZA info | grep 'status: error' | wc -l)"
+su postgres -c "exit $(pgbackrest --stanza=${PGBACKREST_STANZA:-database} info | grep 'status: error' | wc -l)"
 [ $? -ne 0 ] && echo "pgbackrest is not ready" && exit 1
 
 su postgres -c "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'SELECT 1' || exit 1"
