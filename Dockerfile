@@ -28,7 +28,6 @@ RUN <<EOR
         cd / && rm -rf /tmp/pg_cron;
         apk del .build-deps;
     fi
-    fi
 EOR
 
 FROM base
