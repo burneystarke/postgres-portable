@@ -15,16 +15,10 @@ RUN <<EOR
     apt-get install -y \
         ca-certificates \
         postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron \
-        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh \
         pgbackrest;
     rm -rf /var/lib/apt/lists/*; 
     elif [ -d /etc/apk ]; then 
-    apk update && 
-    apk add --no-cache \
-        ca-certificates \
-        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron \
-        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh \
-        pgbackrest;
+        throw "Alpine doesn't have a standalone pgcron, it installs a new versions of postgres."
     fi
 EOR
 
@@ -33,7 +27,7 @@ ARG ORIGINAL_ENTRYPOINT
 ENV ENTRYCHAIN="${ORIGINAL_ENTRYPOINT}"
 #Remove this if it exists so entrypoint can honor user volumes and only replace if default
 RUN rm /etc/pgbackrest.conf -f
-RUN mkdir -p /crontabs /tmp/pgbackrest/ /var/log/pgbackrest && chown -R postgres:postgres /tmp/pgbackrest/ /var/log/pgbackrest
+RUN mkdir -p /tmp/pgbackrest/ /var/log/pgbackrest && chown -R postgres:postgres /tmp/pgbackrest/ /var/log/pgbackrest
 
 # Copy configuration scripts
 COPY pgp-entrypoint.sh pgp-healthcheck.sh pgp-update-pgcron.sh /usr/local/bin/

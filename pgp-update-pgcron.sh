@@ -15,14 +15,17 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --no-psqlrc --
 -- Need to reload config to ensure the shared library is loaded.
 SELECT pg_reload_conf();
 CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS plsh;
+CREATE EXTENSION IF NOT EXISTS plperlu;
 
 -- Create the exec_shell function FIRST
-CREATE OR REPLACE FUNCTION exec_shell(command text)
-	RETURNS text AS \$func\$
-#!/bin/bash
-eval "\$1"
-\$func\$ LANGUAGE plsh;
+CREATE OR REPLACE FUNCTION pgbackrest_full()
+RETURNS void AS \$\$
+    system('pgbackrest --stanza=$STANZA backup --type=full');
+\$\$ LANGUAGE plperlu;
+CREATE OR REPLACE FUNCTION pgbackrest_incr()
+RETURNS void AS \$\$
+    system('pgbackrest --stanza=$STANZA backup --type=full');
+\$\$ LANGUAGE plperlu;
 
 -- Drop existing jobs if they exist
 DELETE FROM cron.job WHERE jobname IN ('full-backup', 'incr-backup');
@@ -31,14 +34,14 @@ DELETE FROM cron.job WHERE jobname IN ('full-backup', 'incr-backup');
 SELECT cron.schedule(
 	'full-backup',
 	'$FULL_CRON',
-	\$\$SELECT exec_shell('pgbackrest --stanza=$STANZA backup --type=full')\$\$
+	'SELECT pgbackrest_full();'
 );
 
 -- Schedule incremental backup
 SELECT cron.schedule(
 	'incr-backup',
 	'$INCR_CRON',
-	\$\$SELECT exec_shell('pgbackrest --stanza=$STANZA backup --type=incr')\$\$
+	'SELECT pgbackrest_incr();'
 );
 EOSQL
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --no-psqlrc --db-name "postgres"  -c 'SELECT jobname,schedule,command FROM cron.job'
