@@ -21,12 +21,17 @@ RUN <<EOR
         apk update &&
         apk add --no-cache \
         ca-certificates \
-        pgbackrest;
-        apk add --virtual .build-deps build-base llvm19 openssl tar clang19 cmake;
-        mkdir /tmp/pg_cron && cd /tmp/pg_cron;
-        wget -qO- https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.7.tar.gz | tar -xvzf - --strip-components 1 -C . && make install;
-        cd / && rm -rf /tmp/pg_cron;
-        apk del .build-deps;
+        tar;
+        #gnutar needed for transform
+        #the postgresql pgcron extension puts the extension in the default verison of pg_cron for the distro. This uses tar transforms to put it in the correct place.
+        apk fetch -s postgresql-pg_cron | \
+            tar -v -xzf - \
+            --exclude=".*"
+            --transform="s|.*/lib/postgresql[0-9]*|${pkglibdir:1}|g" \
+            --transform="s|.*/share/postgresql[0-9]*|${sharedir:1}|g" \
+            -C /;
+        #pgbackrest includes whatever version of postgres is default, we don't need that. Also exclude logrotate bundle.
+        apk fetch -s pgbackrest | tar -xzf - --exclude="*logrotate*" -C /; 
     fi
 EOR
 
