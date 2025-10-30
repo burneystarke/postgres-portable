@@ -15,7 +15,7 @@ RUN <<EOR
     apt-get install -y \
         ca-certificates \
         postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron \
-        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh; \
+        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh \
         pgbackrest;
     rm -rf /var/lib/apt/lists/*; 
     elif [ -d /etc/apk ]; then 
@@ -23,7 +23,7 @@ RUN <<EOR
     apk add --no-cache \
         ca-certificates \
         postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron \
-        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh; \
+        postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-plsh \
         pgbackrest;
     fi
 EOR
