@@ -15,12 +15,14 @@ RUN <<EOR
     apt-get install -y \
         ca-certificates \
         postgresql-$(pg_config --version | grep -oE '[0-9]+' | head -1)-cron \
+        perl \
         pgbackrest;
     rm -rf /var/lib/apt/lists/*; 
     elif [ -d /etc/apk ]; then 
         apk update &&
         apk add --no-cache \
         ca-certificates \
+        perl \
         pgbackrest;
         apk add --virtual .build-deps build-base llvm19 openssl tar clang19 cmake;
         mkdir /tmp/pg_cron && cd /tmp/pg_cron;

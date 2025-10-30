@@ -23,4 +23,10 @@ else
 	echo "pgbackrest stanza '$STANZA' already initialized."
 fi
 
+#Generate pg_cron conf
+cat > /var/lib/postgresql/data/conf.d/pgcron.conf <<EOF
+shared_preload_libraries = 'pg_cron'
+EOF
+pg_ctl restart
+
 pgp-update-pgcron.sh
