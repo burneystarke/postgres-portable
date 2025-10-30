@@ -56,7 +56,7 @@ jobs:
           REPO_TAG=$(docker image inspect $SRC_IMAGE | jq .[0].RepoTags[0] -r)
           IMAGE_TAG=$( echo $REPO_TAG | awk -F'/' '{n=split($NF, a, ":"); tag=a[2]; sub(":.+", "", $NF); if (NF==1) print $NF ":" tag; else print $(NF-1) "-" $NF ":" tag}')
           echo "Will tag $REPO_TAG as $IMAGE_TAG"
-          IMAGE=$(echo $IMAGE_TAG | awk -F':' '{print $1"-portable"}')
+          IMAGE=$(echo $IMAGE_TAG | awk -F':' '{print $1"-portable-pgcron"}')
           TAG=$(echo $IMAGE_TAG | awk -F':' '{print $2}')
           echo "Appending original CMD to end of dockerfile"
           echo "CMD $ORIGINAL_CMD" >> Dockerfile
